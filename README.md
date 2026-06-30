@@ -4,6 +4,9 @@
 
 A lightweight, offline-first Windows desktop application built in Python and PyQt5 to convert Urdu text bidirectionally between InPage's legacy glyph encoding (CP-1252/custom) and standard Unicode.
 This is a paste-based text converter that bypasses the need to parse binary `.inp` files, designed to easily migrate text databases between legacy print layouts and modern web formats.
+
+![InPage ↔ Unicode Urdu Converter Screenshot](Screenshot/main.png)
+
 ---
 ## 🚀 Key Features
 *   **Bidirectional Conversion**: Select between `InPage → Unicode` and `Unicode → InPage` modes.
