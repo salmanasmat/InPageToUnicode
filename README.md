@@ -1,11 +1,31 @@
 # InPage ↔ Unicode Urdu Converter
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Platform: Windows](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](#)
+[![GitHub Release](https://img.shields.io/github/v/release/salmanasmat/InPageToUnicode.svg)](https://github.com/salmanasmat/InPageToUnicode/releases/latest)
 
-A lightweight, offline-first Windows desktop application built in Python and PyQt5 to convert Urdu text bidirectionally between InPage's legacy glyph encoding (CP-1252/custom) and standard Unicode.
-This is a paste-based text converter that bypasses the need to parse binary `.inp` files, designed to easily migrate text databases between legacy print layouts and modern web formats.
+Convert old InPage Urdu documents into modern Unicode text — works fully offline, no internet required, and no data ever leaves your computer.
+
+For developers and advanced users, the application is built in Python and PyQt5 to provide bidirectional conversion between InPage's legacy glyph encoding (CP-1252/custom) and standard Unicode. This paste-based text utility bypasses the need to parse binary `.inp` files, designed to easily migrate text databases between legacy print layouts and modern web formats.
 
 ![InPage ↔ Unicode Urdu Converter Screenshot](Screenshot/main.png)
+
+---
+
+## Who is this for?
+
+*   **Urdu Publishers & Typesetters**: Digitizing old InPage books and newspapers into modern digital formats.
+*   **Students & Researchers**: Converting legacy InPage thesis files and documents to edit them in modern tools.
+*   **IT Administrators**: Migrating legacy office archives to modern content management systems.
+*   **Everyday Users**: Anyone who has legacy `.inp`-era copied or pasted text that renders as gibberish (e.g., CP-1252 character maps) in Microsoft Word or web browsers.
+
+---
+
+## Download
+
+*   🚀 **[Download Installer (for everyday users, no Python needed)](https://github.com/salmanasmat/InPageToUnicode/releases/latest)**: Download the latest setup executable to install the application instantly on Windows.
+*   💻 **[Build from source (for developers)](#🛠️-developer-setup--installation)**: Follow the instructions below to run the code locally or package it manually.
 
 ---
 ## 🚀 Key Features
@@ -70,3 +90,8 @@ The output installer will be saved to the `installer-output/` directory.
 ## 📄 License
 This project is licensed under the **GNU General Public License v3 (GPL v3)**. See the [LICENSE](LICENSE) file for the full text.
 Copyright (C) 2026 [Salman Asmat](https://github.com/salmanasmat)
+
+<!--
+Recommended GitHub Topics to add via repository settings:
+urdu, inpage, unicode, pyqt5, nastaliq, urdu-converter, pakistan, offline-tool, python-desktop-app, urdu-typing
+-->
