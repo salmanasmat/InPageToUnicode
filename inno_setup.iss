@@ -1,7 +1,7 @@
 #define MyAppName "InPage Unicode Converter"
 #define MyAppVersion "1.0"
 #define MyAppExeName "InPage Unicode Converter.exe"
-#define MyAppPublisher "Antigravity"
+#define MyAppPublisher "Salman Asmat"
 #define MyAppDir "C:\Program Files\InPageUnicodeConverter"
 
 [Setup]

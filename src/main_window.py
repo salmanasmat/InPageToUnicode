@@ -11,6 +11,10 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QMimeData
 from PyQt5.QtGui import QFont, QFontDatabase, QTextBlockFormat, QTextCursor, QIcon, QKeySequence
+try:
+    from clipboard import get_preferred_clipboard_text
+except ImportError:
+    from src.clipboard import get_preferred_clipboard_text
 
 def get_resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -297,44 +301,22 @@ class MainWindow(QMainWindow):
         """Update placeholder text, text alignment, and fonts when the direction changes."""
         to_unicode = self.radio_inpage_to_unicode.isChecked()
         
+        # Reset local stylesheets to inherit parent window styles
+        self.input_box.setStyleSheet("")
+        self.output_box.setStyleSheet("")
+        
         if to_unicode:
             # Input is InPage text: LTR alignment, monospace font representation
             self.input_box.setPlaceholderText("Paste InPage text here (e.g. \\x04\\u0192\\x04\\x81\\x04\\u0153...)")
             self.input_box.setLayoutDirection(Qt.LeftToRight)
-            self.input_box.setStyleSheet("""
-                QTextEdit {
-                    background-color: #ffffff;
-                    border: 1px solid #ced4da;
-                    border-radius: 6px;
-                    padding: 10px;
-                    color: #212529;
-                    font-family: 'Courier New', 'Consolas', 'monospace';
-                    font-size: 12pt;
-                }
-                QTextEdit:focus {
-                    border: 1.5px solid #228be6;
-                }
-            """)
+            self.input_box.setFont(QFont("Courier New", 12))
             self.input_box.setAlignment(Qt.AlignLeft)
             self.set_line_height(self.input_box, 100)
             
             # Output is Unicode Urdu: RTL alignment, Nastaliq font styles
             self.output_box.setPlaceholderText("Converted Unicode Urdu will appear here...")
             self.output_box.setLayoutDirection(Qt.RightToLeft)
-            self.output_box.setStyleSheet(f"""
-                QTextEdit {{
-                    background-color: #ffffff;
-                    border: 1px solid #ced4da;
-                    border-radius: 6px;
-                    padding: 10px;
-                    color: #212529;
-                    font-family: '{self.urdu_font_family}', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', 'Tahoma', 'serif';
-                    font-size: 16pt;
-                }}
-                QTextEdit:focus {{
-                    border: 1.5px solid #228be6;
-                }}
-            """)
+            self.output_box.setFont(QFont(self.urdu_font_family, 16))
             self.output_box.setAlignment(Qt.AlignRight)
             self.set_line_height(self.output_box, 150)
             
@@ -342,40 +324,14 @@ class MainWindow(QMainWindow):
             # Input is Unicode Urdu: RTL alignment, Nastaliq font styles
             self.input_box.setPlaceholderText("Type or paste Unicode Urdu here...")
             self.input_box.setLayoutDirection(Qt.RightToLeft)
-            self.input_box.setStyleSheet(f"""
-                QTextEdit {{
-                    background-color: #ffffff;
-                    border: 1px solid #ced4da;
-                    border-radius: 6px;
-                    padding: 10px;
-                    color: #212529;
-                    font-family: '{self.urdu_font_family}', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', 'Tahoma', 'serif';
-                    font-size: 16pt;
-                }}
-                QTextEdit:focus {{
-                    border: 1.5px solid #228be6;
-                }}
-            """)
+            self.input_box.setFont(QFont(self.urdu_font_family, 16))
             self.input_box.setAlignment(Qt.AlignRight)
             self.set_line_height(self.input_box, 150)
             
             # Output is InPage text: LTR alignment, monospace font representation
             self.output_box.setPlaceholderText("Converted InPage text representation will appear here...")
             self.output_box.setLayoutDirection(Qt.LeftToRight)
-            self.output_box.setStyleSheet("""
-                QTextEdit {
-                    background-color: #ffffff;
-                    border: 1px solid #ced4da;
-                    border-radius: 6px;
-                    padding: 10px;
-                    color: #212529;
-                    font-family: 'Courier New', 'Consolas', 'monospace';
-                    font-size: 12pt;
-                }
-                QTextEdit:focus {
-                    border: 1.5px solid #228be6;
-                }
-            """)
+            self.output_box.setFont(QFont("Courier New", 12))
             self.output_box.setAlignment(Qt.AlignLeft)
             self.set_line_height(self.output_box, 100)
 
@@ -463,82 +419,13 @@ class MainWindow(QMainWindow):
                     f"Failed to save file:\n{str(e)}"
                 )
 
-    def get_raw_clipboard_bytes(self):
-        """Read raw CF_TEXT format bytes directly from Windows clipboard using ctypes."""
-        if sys.platform != 'win32':
-            return None
-        import ctypes
-        from ctypes import wintypes
-        
-        # Windows API declarations
-        OpenClipboard = ctypes.windll.user32.OpenClipboard
-        OpenClipboard.argtypes = [wintypes.HWND]
-        OpenClipboard.restype = wintypes.BOOL
-        
-        CloseClipboard = ctypes.windll.user32.CloseClipboard
-        CloseClipboard.argtypes = []
-        CloseClipboard.restype = wintypes.BOOL
-        
-        GetClipboardData = ctypes.windll.user32.GetClipboardData
-        GetClipboardData.argtypes = [wintypes.UINT]
-        GetClipboardData.restype = wintypes.HANDLE
-        
-        GlobalLock = ctypes.windll.kernel32.GlobalLock
-        GlobalLock.argtypes = [wintypes.HANDLE]
-        GlobalLock.restype = ctypes.c_void_p
-        
-        GlobalUnlock = ctypes.windll.kernel32.GlobalUnlock
-        GlobalUnlock.argtypes = [wintypes.HANDLE]
-        GlobalUnlock.restype = wintypes.BOOL
-        
-        CF_TEXT = 1
-        
-        if not OpenClipboard(None):
-            return None
-        try:
-            handle = GetClipboardData(CF_TEXT)
-            if not handle:
-                return None
-            ptr = GlobalLock(handle)
-            if not ptr:
-                return None
-            try:
-                return ctypes.c_char_p(ptr).value
-            finally:
-                GlobalUnlock(handle)
-        finally:
-            CloseClipboard()
-
     def get_preferred_clipboard_text(self):
         """
         Choose the most reliable clipboard text format. Bypasses ANSI translation if
         direct InPage text is detected, but prefers standard unicode text if the raw bytes
         were corrupted/lossily-converted by Windows.
         """
-        clipboard = QApplication.clipboard()
-        text_from_qt = clipboard.text()
-        
-        # If on non-Windows or standard clipboard is empty, fallback directly
-        if sys.platform != 'win32' or not text_from_qt:
-            return text_from_qt
-            
-        try:
-            raw_bytes = self.get_raw_clipboard_bytes()
-            if raw_bytes:
-                text_from_raw = raw_bytes.decode('latin1')
-                
-                # Check for lossy conversion in CF_TEXT:
-                # 1. If standard clipboard has NBSP (\xa0) but raw bytes do not, CF_TEXT lost it.
-                # 2. If raw bytes contain more '?' characters than standard text, CF_TEXT is corrupted.
-                if ('\xa0' in text_from_qt and '\xa0' not in text_from_raw) or \
-                   (text_from_raw.count('?') > text_from_qt.count('?')):
-                    return text_from_qt
-                    
-                return text_from_raw
-        except Exception:
-            pass
-            
-        return text_from_qt
+        return get_preferred_clipboard_text()
 
     def handle_paste(self):
         """Paste text from clipboard into the input box and apply alignment/line height."""

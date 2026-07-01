@@ -44,8 +44,14 @@ class TestInPageUnicodeConversion(unittest.TestCase):
         
         # Unicode -> InPage for digits
         # Standard unicode digits: ۱۲۳۴۵
-        # Should convert to InPage representation (without any reversal in current unicode_to_inpage logic)
-        self.assertEqual(unicode_to_inpage('۱۲۳۴۵'), inpage_num)
+        # With reverse_digits=False, should convert to straight InPage representation
+        self.assertEqual(unicode_to_inpage('۱۲۳۴۵', {'reverse_digits': False}), inpage_num)
+        
+        # With default reverse_digits=True, should reverse to match InPage's expected raw order
+        self.assertEqual(unicode_to_inpage('۱۲۳۴۵'), '\x04\xd5\x04\xd4\x04\xd3\x04\xd2\x04\xd1')
+        
+        # Verify perfect round-trip under default options
+        self.assertEqual(inpage_to_unicode(unicode_to_inpage('۱۲۳۴۵')), '۱۲۳۴۵')
 
     def test_heh_hamza(self):
         # InPage: \x04\xa6\x04\xbf (Heh + Hamza combinations)

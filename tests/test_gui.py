@@ -60,10 +60,16 @@ class TestMainWindow(unittest.TestCase):
         self.assertEqual(self.window.char_count_label.text(), "0 characters")
 
     def test_paste_button(self):
+        # Process pending deletions from previous tests
+        QApplication.processEvents()
+        
         # Set some text to the clipboard
         clipboard = QApplication.clipboard()
         test_text = "Text from clipboard"
         clipboard.setText(test_text)
+        
+        # Sync clipboard
+        QApplication.processEvents()
         
         # Click the paste button
         QTest.mouseClick(self.window.paste_btn, Qt.LeftButton)

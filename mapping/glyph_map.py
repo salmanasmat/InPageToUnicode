@@ -244,6 +244,16 @@ UTI_MAP = {
     '': '\x04\xb4',
 }
 
+MANUAL_KEYS = {
+    '\x04\xa9', '\x04\xfd', '\x04\xfe',
+    '\x04\xa3\x04\xa2', '\x04\xbf\x04\xa2', '\x04\xbf\x04\xa6',
+    '\x04\xa3\x04\xa6', '\x04\xa2\x04\xbf', '\x04\xa6\x04\xbf'
+}
+
+# Precompile pattern to perform a single-pass regex replacement instead of 110 separate replace passes
+sorted_keys = sorted([k for k in ITU_MAP if k not in MANUAL_KEYS], key=len, reverse=True)
+ITU_REGEX = re.compile("|".join(re.escape(k) for k in sorted_keys))
+
 
 def inpage_to_unicode(text: str, options: dict = None) -> str:
     """
@@ -266,8 +276,7 @@ def inpage_to_unicode(text: str, options: dict = None) -> str:
     # Preprocess text to add \x04 prefix to characters that are not preceded by it
     # and are not control/whitespace characters (except space). This allows
     # converting pasted InPage text which is in CP-1252 encoding and doesn't contain \x04.
-    import re
-    text = re.sub(r'(?<!\x04)[^\r\n\t\x04]', lambda m: '\x04' + m.group(0), text)
+    text = re.sub(r'(?<!\x04)([^\r\n\t\x04])', "\x04\\1", text)
 
 
     # 1. Multi-character contextual replacements (Heh-Hamza combinations)
@@ -300,16 +309,8 @@ def inpage_to_unicode(text: str, options: dict = None) -> str:
         text = text.replace('\x04\xfd', '’')
         text = text.replace('\x04\xfe', '‘')
 
-    # 4. Apply standard mappings (excluding the ones handled manually above)
-    manual_keys = {
-        '\x04\xa9', '\x04\xfd', '\x04\xfe',
-        '\x04\xa3\x04\xa2', '\x04\xbf\x04\xa2', '\x04\xbf\x04\xa6',
-        '\x04\xa3\x04\xa6', '\x04\xa2\x04\xbf', '\x04\xa6\x04\xbf'
-    }
-
-    for k, v in ITU_MAP.items():
-        if k not in manual_keys:
-            text = text.replace(k, v)
+    # 4. Apply standard mappings (excluding the ones handled manually above) in a single regex pass
+    text = ITU_REGEX.sub(lambda m: ITU_MAP[m.group(0)], text)
 
     # Strip any remaining \x04 characters that did not map
     text = text.replace('\x04', '')
@@ -369,24 +370,43 @@ def inpage_to_unicode(text: str, options: dict = None) -> str:
     return text
 
 
-def unicode_to_inpage(text: str) -> str:
+def unicode_to_inpage(text: str, options: dict = None) -> str:
     """
     Convert standard Unicode Urdu text to legacy InPage encoding.
     
     Args:
         text (str): Unicode Urdu text.
+        options (dict, optional): Dict to override DEFAULT_OPTIONS.
         
     Returns:
         str: InPage encoded text.
     """
+    opts = DEFAULT_OPTIONS.copy()
+    if options:
+        opts.update(options)
+
     if not text:
         return ""
 
-    # 1. Multi-character replacements (longest first)
+    # 1. Digit Reversal for Numbers/Digits (as InPage expects them reversed in raw streams)
+    if opts['reverse_digits']:
+        if opts['thousands_separator'] and opts['reverse_s_sign']:
+            pattern = r"[۰-۹][۰-۹/+×\u00f7%,]*"
+            def repl_digits(match):
+                val = match.group(0)
+                if val.endswith('/'):
+                    return val[:-1][::-1] + '/'
+                return val[::-1]
+            text = re.sub(pattern, repl_digits, text)
+        else:
+            pattern = r"[۰-۹]+"
+            text = re.sub(pattern, lambda m: m.group(0)[::-1], text)
+
+    # 2. Multi-character replacements (longest first)
     text = text.replace('\u06cc\u0626', '\x04\xa4\x04\xbf')
     text = text.replace('\u0627\x04\x08', '\x04\x81\x04\x08')
     
-    # 2. Character-by-character translation
+    # 3. Character-by-character translation
     result = []
     for char in text:
         result.append(UTI_MAP.get(char, char))
